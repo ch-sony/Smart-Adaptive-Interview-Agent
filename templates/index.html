@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Adaptive Interview Agent | LangGraph & Gemini</title>
+  <meta name="description" content="AI-powered technical interview agent that dynamically adapts questions, topics, and difficulty based on real-time candidate answers using LangGraph and Google Gemini.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Mermaid.js for rendering LangGraph workflow -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <div class="app-container">
+    <!-- Navigation Bar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Smart Adaptive Interview</span>
+          <span class="brand-badge">LangGraph Agent</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnWorkflow" class="btn-ghost" title="View LangGraph Architecture">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="6" height="6" rx="1"/>
+            <rect x="15" y="15" width="6" height="6" rx="1"/>
+            <path d="M6 9v3a3 3 0 0 0 3 3h6m0 0l-2-2m2 2l-2 2"/>
+          </svg>
+          LangGraph Workflow
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area with Views -->
+    <main class="main-content">
+      
+      <!-- SCREEN 1: Setup View -->
+      <section id="setupView" class="view-panel active">
+        <div class="hero-section">
+          <div class="hero-tag">
+            <span class="pulse-beacon"></span>
+            Non-Linear Dynamic Assessment
+          </div>
+          <h1 class="hero-title">Experience an Interview Agent That Actually <span class="gradient-text">Adapts to You</span></h1>
+          <p class="hero-subtitle">
+            Unlike standard chatbots with fixed question lists, this agent uses a <strong>LangGraph StateGraph</strong> to evaluate every answer, detect your strengths and weaknesses, and dynamically adjust difficulty and topics in real-time.
+          </p>
+        </div>
+
+        <div class="setup-grid">
+          <!-- Configuration Card -->
+          <div class="setup-card glass-panel">
+            <div class="card-header">
+              <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+              </div>
+              <div>
+                <h2>Interview Configuration</h2>
+                <p>Customize your adaptive assessment parameters</p>
+              </div>
+            </div>
+
+            <form id="startInterviewForm" class="setup-form">
+              <!-- Domain Selection -->
+              <div class="form-group">
+                <label for="domainSelect">
+                  <span>Target Technical Domain</span>
+                  <span class="label-hint">Curriculum syllabus mapped</span>
+                </label>
+                <div class="custom-select-wrapper">
+                  <select id="domainSelect" name="domain" required>
+                    {% for d in domains %}
+                    <option value="{{ d }}" {% if d == 'Python' %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Starting Difficulty -->
+              <div class="form-group">
+                <label>
+                  <span>Starting Difficulty</span>
+                  <span class="label-hint">Agent adjusts dynamically thereafter</span>
+                </label>
+                <div class="difficulty-toggle-group">
+                  <label class="diff-option">
+                    <input type="radio" name="difficulty" value="Easy">
+                    <div class="diff-card diff-easy">
+                      <span class="diff-name">Easy</span>
+                      <span class="diff-desc">Fundamentals & Core Concepts</span>
+                    </div>
+                  </label>
+                  <label class="diff-option">
+                    <input type="radio" name="difficulty" value="Medium" checked>
+                    <div class="diff-card diff-medium">
+                      <span class="diff-name">Medium</span>
+                      <span class="diff-desc">Standard Technical & Scenarios</span>
+                    </div>
+                  </label>
+                  <label class="diff-option">
+                    <input type="radio" name="difficulty" value="Hard">
+                    <div class="diff-card diff-hard">
+                      <span class="diff-name">Hard</span>
+                      <span class="diff-desc">Deep Internals & Edge Cases</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Question Count -->
+              <div class="form-group">
+                <label for="questionCount">
+                  <span>Number of Questions</span>
+                  <span class="label-hint" id="questionCountDisplay">5 Questions (~10 mins)</span>
+                </label>
+                <div class="range-slider-container">
+                  <input type="range" id="questionCount" name="total_questions" min="2" max="10" value="5" step="1">
+                  <div class="range-ticks">
+                    <span>2</span>
+                    <span>3</span>
+                    <span>5</span>
+                    <span>7</span>
+                    <span>10</span>
+                  </div>
+                </div>
+              </div>
+
+
+
+              <!-- Launch Button -->
+              <button type="submit" id="btnStartInterview" class="btn-primary-glow">
+                <span class="btn-text">Start Adaptive Interview</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- Architecture Highlights Card -->
+          <div class="features-card glass-panel">
+            <div class="card-header">
+              <div class="card-icon blue-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                  <polyline points="2 17 12 22 22 17"/>
+                  <polyline points="2 12 12 17 22 12"/>
+                </svg>
+              </div>
+              <div>
+                <h2>How It Works</h2>
+                <p>LangGraph closed-loop adaptation cycle</p>
+              </div>
+            </div>
+
+            <div class="workflow-steps-mini">
+              <div class="mini-step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <h4>Planner & Generator</h4>
+                  <p>Analyzes domain curriculum and crafts a targeted question for the current difficulty.</p>
+                </div>
+              </div>
+              <div class="mini-step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <h4>Multi-Factor Evaluation</h4>
+                  <p>Scores correctness, depth, reasoning, and completeness from 0 to 10.</p>
+                </div>
+              </div>
+              <div class="mini-step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                  <h4>Skill Profiling</h4>
+                  <p>Tracks cumulative strengths and detects technical blind spots.</p>
+                </div>
+              </div>
+              <div class="mini-step highlight-step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                  <h4>Dynamic Difficulty Adaptation</h4>
+                  <p><strong>Strong (≥7.5):</strong> Increases difficulty.<br><strong>Struggles (&lt;4.0):</strong> Decreases difficulty and probes foundations.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-guarantee-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span>Questions are <strong>NEVER pre-generated</strong>. Each question depends on your answer to the last one.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: Active Interview View -->
+      <section id="interviewView" class="view-panel">
+        <!-- Live HUD Status Bar -->
+        <div class="interview-hud glass-panel">
+          <div class="hud-left">
+            <span class="hud-label">Domain</span>
+            <span id="hudDomain" class="hud-value font-mono">Python</span>
+          </div>
+          <div class="hud-center">
+            <div class="question-tracker">
+              <span class="tracker-label">Question</span>
+              <span class="tracker-counter">
+                <strong id="hudCurrentQ">1</strong> / <span id="hudTotalQ">5</span>
+              </span>
+            </div>
+            <div class="hud-progress-bar">
+              <div id="hudProgressBarFill" class="progress-fill" style="width: 20%;"></div>
+            </div>
+          </div>
+          <div class="hud-right">
+            <div class="hud-metric">
+              <span class="metric-label">Current Difficulty</span>
+              <span id="hudDifficultyBadge" class="diff-badge diff-medium">MEDIUM</span>
+            </div>
+            <div class="hud-metric">
+              <span class="metric-label">Avg Score</span>
+              <span id="hudAvgScore" class="score-pill">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Topics Breadcrumb Progress -->
+        <div class="topics-breadcrumb-bar glass-panel">
+          <span class="breadcrumb-title">Topic Progress:</span>
+          <div id="topicsBreadcrumbs" class="breadcrumbs-list">
+            <!-- Dynamic breadcrumbs injected by JS -->
+          </div>
+        </div>
+
+        <!-- Adaptive Rationale Pill (Shows Agent's Thinking) -->
+        <div id="agentReasonCard" class="agent-reason-card">
+          <div class="reason-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="reason-text">
+            <span class="reason-label">Agent Strategy:</span>
+            <span id="agentReasonText">Starting interview at Medium difficulty.</span>
+          </div>
+        </div>
+
+        <!-- Active Question Card -->
+        <div id="questionContainer" class="question-card glass-panel">
+          <div class="question-header">
+            <div class="q-meta">
+              <span id="qTopicBadge" class="meta-tag topic-tag">Variables & Memory</span>
+              <span id="qTypeBadge" class="meta-tag type-tag">Conceptual</span>
+            </div>
+            <span id="qDifficultyPill" class="diff-badge-sm diff-medium">Medium</span>
+          </div>
+
+          <div class="question-body">
+            <div id="questionText" class="question-content">
+              Loading question...
+            </div>
+          </div>
+
+          <!-- Answer Submission Section -->
+          <div id="answerSection" class="answer-section">
+            <div class="answer-header">
+              <label for="answerInput">
+                <span>Your Technical Response</span>
+                <span class="label-hint">Be thorough: explain concepts, edge cases, and reasoning</span>
+              </label>
+              <div class="counter-group">
+                <span id="charCount">0 characters</span>
+              </div>
+            </div>
+
+            <textarea 
+              id="answerInput" 
+              placeholder="Type or paste your technical answer here. Include code examples if relevant..." 
+              rows="6"
+              required
+            ></textarea>
+
+            <div class="answer-actions">
+              <button type="button" id="btnSubmitAnswer" class="btn-primary-glow">
+                <span class="btn-text">Submit Answer</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- EVALUATION REVEAL CARD (Appears immediately after submission!) -->
+          <div id="evaluationCard" class="evaluation-card glass-panel hidden">
+            <div class="eval-header">
+              <div class="eval-status-group">
+                <div id="evalScorePill" class="eval-score-circle">8.0</div>
+                <div class="eval-title-block">
+                  <div class="eval-status-badge" id="evalStatusBadge">CORRECT</div>
+                  <span class="eval-subtitle">LangGraph Answer Evaluation</span>
+                </div>
+              </div>
+              <div class="eval-diff-shift" id="evalDiffShift">
+                <span>Difficulty:</span>
+                <strong id="evalDiffChange">Medium → Hard</strong>
+              </div>
+            </div>
+
+            <div class="eval-feedback-box">
+              <div class="feedback-heading">Evaluator Feedback</div>
+              <p id="evalFeedbackText">Strong technical answer covering the expected mechanics.</p>
+            </div>
+
+            <div class="eval-insights-grid">
+              <div class="insight-box strengths-box">
+                <div class="insight-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  Strengths Demonstrated
+                </div>
+                <ul id="evalStrengthsList" class="insight-list"></ul>
+              </div>
+              <div class="insight-box weaknesses-box">
+                <div class="insight-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  Areas to Polish
+                </div>
+                <ul id="evalWeaknessesList" class="insight-list"></ul>
+              </div>
+            </div>
+
+            <div class="eval-decision-box">
+              <span class="decision-label">Adaptive Next Step:</span>
+              <p id="evalNextReasonText">Difficulty increased to Hard. Moving to next topic.</p>
+            </div>
+
+            <!-- Crucial: Next Question button (keeps question hidden until user clicks continue!) -->
+            <div class="eval-footer-actions">
+              <button type="button" id="btnNextQuestion" class="btn-primary-glow pulse-btn">
+                <span id="btnNextQuestionText">Continue to Next Question</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: Final Report View -->
+      <section id="resultsView" class="view-panel">
+        <div class="results-header glass-panel">
+          <div class="completion-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="7"></circle>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>
+            Interview Completed
+          </div>
+          <h1 class="results-title">Final Adaptive Evaluation Report</h1>
+          <p class="results-subtitle">Synthesized by LangGraph Multi-Turn State Machine</p>
+        </div>
+
+        <div class="results-dashboard-grid">
+          <!-- Overall Score Card -->
+          <div class="score-card glass-panel">
+            <div class="score-circle-outer">
+              <div class="score-number-display">
+                <span id="finalOverallScore" class="score-big">8.2</span>
+                <span class="score-max">/ 10</span>
+              </div>
+            </div>
+            <div class="score-verdict" id="finalVerdict">Senior Competency</div>
+            <div class="score-metrics-row">
+              <div class="sm-metric">
+                <span class="sm-label">Questions</span>
+                <span id="finalQuestionsCount" class="sm-val">5 / 5</span>
+              </div>
+              <div class="sm-metric">
+                <span class="sm-label">Domain</span>
+                <span id="finalDomain" class="sm-val">Python</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Difficulty Progression Path -->
+          <div class="progression-card glass-panel">
+            <h3>Adaptive Difficulty Progression</h3>
+            <p class="prog-desc">Visual path showing how the agent adapted difficulty based on your answers:</p>
+            <div id="progressionTimeline" class="progression-timeline">
+              <!-- Dynamically injected difficulty steps -->
+            </div>
+
+            <!-- Topic Performance Breakdown -->
+            <div class="topic-bars-container">
+              <h4>Topic Competency Breakdown</h4>
+              <div id="topicBarsList" class="topic-bars-list">
+                <!-- Injected topic bars -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Analysis: Strengths & Weaknesses -->
+        <div class="analysis-grid">
+          <div class="glass-panel profile-panel">
+            <div class="panel-header green-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <h3>Strong Areas</h3>
+            </div>
+            <ul id="finalStrengthsList" class="profile-chips-list">
+              <!-- Injected strengths -->
+            </ul>
+          </div>
+
+          <div class="glass-panel profile-panel">
+            <div class="panel-header amber-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h3>Areas for Improvement</h3>
+            </div>
+            <ul id="finalWeaknessesList" class="profile-chips-list">
+              <!-- Injected weaknesses -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Executive Assessment & Recommendations -->
+        <div class="glass-panel executive-panel">
+          <div class="panel-header purple-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <h3>Executive Assessment & Recommendations</h3>
+          </div>
+          <div class="executive-body">
+            <p id="finalExecutiveSummary" class="exec-summary">
+              Candidate demonstrated strong grasp of core fundamentals...
+            </p>
+            <div class="recommendations-box">
+              <h4>Recommended Action Plan:</h4>
+              <ul id="finalRecommendationsList" class="rec-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Interview Transcript Accordion -->
+        <div class="glass-panel transcript-panel">
+          <div class="accordion-toggle" id="btnToggleTranscript">
+            <div class="acc-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Detailed Question & Answer Transcript (<span id="transcriptCount">5</span>)</span>
+            </div>
+            <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div id="transcriptContent" class="transcript-content hidden">
+            <!-- Dynamic Q&A entries injected here -->
+          </div>
+        </div>
+
+        <!-- Results Actions -->
+        <div class="results-actions-bar">
+          <button id="btnRestartInterview" class="btn-primary-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Start Another Interview
+          </button>
+          <button id="btnDownloadReport" class="btn-primary-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            Download Interview Report
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Built with <strong>LangGraph StateGraph</strong>, <strong>Google Gemini</strong>, and <strong>FastAPI</strong> &bull; Production Ready for Render</p>
+    </footer>
+  </div>
+
+  <!-- WORKFLOW MODAL -->
+  <div id="workflowModal" class="modal-overlay hidden">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>LangGraph Adaptive Architecture</h3>
+          <span class="modal-badge">StateGraph Workflow</span>
+        </div>
+        <button id="btnCloseModal" class="btn-close" aria-label="Close Modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-lead">
+          The agent maintains an explicit TypedDict state with checkpointer interrupts. Questions are never pre-generated; every cycle executes the decision loop shown below:
+        </p>
+        <div id="mermaidDiagram" class="mermaid-diagram-box">
+          <div class="mermaid">
+graph TD
+    START([START]) --> Planner[INTERVIEW PLANNER]
+    Planner --> QGen[QUESTION GENERATOR]
+    QGen --> WaitAnswer[/WAIT FOR USER ANSWER (Interrupt)/]
+    WaitAnswer --> AnsEval[ANSWER EVALUATOR]
+    AnsEval --> SkillAnal[SKILL ANALYZER]
+    SkillAnal --> DiffDecider[DIFFICULTY DECIDER]
+    DiffDecider --> NextDecider[NEXT QUESTION DECIDER]
+    NextDecider --> Condition{Questions Remaining?}
+    Condition -- Yes --> QGen
+    Condition -- No --> FinalEval[FINAL EVALUATOR]
+    FinalEval --> END([END])
+    
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1.5px
+    classDef highlight fill:#4F46E5,stroke:#818CF8,color:#FFFFFF,stroke-width:2px
+    classDef terminal fill:#0F172A,stroke:#38BDF8,color:#38BDF8,stroke-width:2px
+    class START,END terminal
+    class DiffDecider,NextDecider highlight
+          </div>
+        </div>
+        <div class="nodes-explainer">
+          <div class="node-pill"><strong>Planner:</strong> Prepares curriculum & starting difficulty</div>
+          <div class="node-pill"><strong>Q-Gen:</strong> Crafts question tailored to state</div>
+          <div class="node-pill"><strong>Evaluator:</strong> Scores correctness & reasoning (0-10)</div>
+          <div class="node-pill"><strong>Difficulty:</strong> Rules adapt Easy ↔ Medium ↔ Hard</div>
+          <div class="node-pill"><strong>Next Decider:</strong> Formulates next topic & rationale</div>
+          <div class="node-pill"><strong>Final:</strong> Synthesizes executive report & roadmap</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
